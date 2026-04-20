@@ -1,0 +1,36 @@
+# A.I. Memory: Virtualbabes Faucet
+
+## Architectural Decisions
+- **WASM-First Logic:** The engine (`main.go`) determines game outcomes; the server (`server.go`) acts as the authoritative oracle for rewards and tournament progression.
+- **Unified Power Scaling:** 0-2599 scale (1 VOI value = 1 Power Point). Max cap: 2599.
+- **Security Architecture:**
+    - Authoritative "Shadow Board" verification in `server.go`.
+    - IP-extraction supports `X-Forwarded-For` for proxied/CDN environments.
+    - Signature verification uses raw byte-comparison (Address types) to prevent Base32 encoding mismatches.
+- **Environment Enforcement:**
+    - All Asset IDs, Contract IDs, and Node URLs are externalized to `.env`.
+    - Mnemonic and Vault address management is strictly server-side.
+    - CORS/WebSocket Origin check uses whitelisted environment strings.
+- **Environment Enforcement:**
+    - All Asset IDs, Contract IDs, and Node URLs are externalized to `.env`.
+    - Hardcoded fallback addresses and mnemonics are strictly prohibited in the source code.
+- **Tournament Architecture:** 
+    - Data: Bracket generated from Hall of Fame rankings.
+    - API: `/api/tournament` provides a public snapshot of the current event.
+    - Security: Public GET endpoint is rate-limited but accessible to all spectators.
+
+## Critical Logic Points
+- **Deck Rating:** [BaseLetter][+...] density-based system (WASM-Native).
+- **Integrity:** "Flys on the Wall" cross-domain handshake is required for all reward claims.
+- **Site Verification:** WASM exposes `VerifySiteHandshake` to authoritative JS bridge for domain authenticity enforcement.
+
+## 4. GitHub & Production Readiness
+- **Secret Management:** All sensitive keys (Algod, Admin Wallets) must reside in `.env`.
+- **Exclusions:** Build artifacts (`main.wasm`), logs (`*.log`), and local memory files are excluded from git.
+- **Asset Pathing:** Implementation of `AssetBase` logic allows for switching between local and CDN (GitHub Pages) assets.
+- **Documentation:** `README.md` serves as the primary entry point for the repository.
+
+## 3. PvE Verification (Shadow Match)
+- **Authoritative Bot:** For Ranked PvE, the server calculates the AI moves.
+- **Validation Chain:** Player Move -> Server Validation -> Server AI Move Calculation -> Broadcast to Player.
+- **Reward Eligibility:** MatchHistory is only generated if the server-side Shadow Board confirms a P1 win.
